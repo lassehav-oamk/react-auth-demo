@@ -5,56 +5,41 @@ import SignupView from './SignupView';
 import Home from './Home';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import React, { useState, useEffect } from 'react';
-import { UserAuthContext } from './Contexts';
 
 const jwtFromStorage = window.localStorage.getItem('appAuthData');
 
 function App() {
 
-  const initialAuthData = {
-    jwt: jwtFromStorage,
-    login: (newValueForJwt) => {
-      const newAuthData = { ...userAuthData,
-          jwt: newValueForJwt
-        };
-      window.localStorage.setItem('appAuthData', newValueForJwt);
-      setUserAuthData(newAuthData);
-    },
-    logout: () => {
-      window.localStorage.removeItem('appAuthData');
-      setUserAuthData({...initialAuthData});
-    }
-  };
-
-  const [ userAuthData, setUserAuthData ] = useState({...initialAuthData});
+  const [ userJwt, setUserJwt ] = useState(jwtFromStorage);
 
   let authRoutes = <>
-            <Route path="/login" element={ <LoginView /> } />
-            <Route path="/signup" element={ <SignupView /> } />
-          </>
+                  <Route path="/login" element={ <LoginView login={(token) => {
+                    window.localStorage.setItem('appAuthData', token);
+                    setUserJwt(token);
+                  }} /> } />
+                  <Route path="/signup" element={ <SignupView /> } />
+                </>
 
-  if(userAuthData.jwt) {
-    authRoutes = <Route path="/protected" element={ <ProtectedView /> }/>
+  if(userJwt != null) {
+    authRoutes = <Route path="/protected" element={ <ProtectedView userJwt={ userJwt } logout={() => setUserJwt(null)}/> }/>
   }
 
   return (
-    <UserAuthContext.Provider value={ userAuthData }>
-      <h1>React Router auth demo</h1>
-      <UserAuthContext.Consumer>
-        { value => (<div>Auth status: { value.jwt != null ? "Logged in": "Not logged in" }</div>) }
-      </UserAuthContext.Consumer>
+      <div>
+        <h1>React Router auth demo</h1>
+        <div>Auth status: { userJwt != null ? "Logged in": "Not logged in" } </div>
 
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          {
-            authRoutes
-          }
-          <Route path="*" element={<Home />} />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Home userJwt={ userJwt } />} />
+            {
+              authRoutes
+            }
+            <Route path="*" element={<Home userjwt={ userJwt } />} />
 
-        </Routes>
-      </BrowserRouter>
-    </UserAuthContext.Provider>
+          </Routes>
+        </BrowserRouter>
+      </div>
   );
 }
 

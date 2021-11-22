@@ -1,21 +1,22 @@
 import React, { useContext, useState } from 'react'
 import { Link } from 'react-router-dom';
-import { UserAuthContext } from './Contexts'
 import Constants from './Constants.json'
 import axios from 'axios';
+import jwt from 'jsonwebtoken';
 
 export default function ProtectedView(props) {
 
-  const UserAuthContextValue = useContext(UserAuthContext);
-
   const [exampleTodoData, setExampleTodoData] = useState([]);
+
+  let decodedJwt = jwt.decode(props.userJwt);
+  console.log(decodedJwt);
 
   const loadData = async () => {
     try {
       const results = await axios.get(Constants.API_ADDRESS + '/todosJWT', {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + UserAuthContextValue.jwt
+          'Authorization': 'Bearer ' + props.userJwt
           }
       });
 
@@ -29,6 +30,11 @@ export default function ProtectedView(props) {
     <div className="protected">
       <h1>Protected view</h1>
       This is the protected view, which is only available for logged users.
+      <div>
+        Here is the data decoded from the user JWT<br />
+        email: { decodedJwt.user.email }<br />
+        id: { decodedJwt.user.id }<br />
+      </div>
       <div>
         <h2>Example todo data from API</h2>
         <button onClick={ loadData }>Click to load data from API with JWT for auth</button>
@@ -51,7 +57,7 @@ export default function ProtectedView(props) {
       </div>
       <div>
         <Link to='/'>Go back to home</Link><br />
-        <button onClick={() => UserAuthContextValue.logout()} >Logout</button>
+        <button onClick={ props.logout } >Logout</button>
       </div>
     </div>
   )
